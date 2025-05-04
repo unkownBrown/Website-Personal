@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paundra Wirahardja Ananto | Game Developer Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Three.js for 3D model viewer -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
+    <style>
+        /* Custom styles */
+        :root {
+            --bg-primary: #f8f9fa;
+            --bg-secondary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #495057;
+            --accent: #4361ee;
+            --card-bg: #ffffff;
+        }
+
+        .dark {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #e6e6e6;
+            --text-secondary: #b8b8b8;
+            --accent: #4cc9f0;
+            --card-bg: #0f3460;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .bg-primary {
+            background-color: var(--bg-primary);
+        }
+
+        .bg-secondary {
+            background-color: var(--bg-secondary);
+        }
+
+        .text-primary {
+            color: var(--text-primary);
+        }
+
+        .text-secondary {
+            color: var(--text-secondary);
+        }
+
+        .accent {
+            color: var(--accent);
+        }
+
+        .bg-accent {
+            background-color: var(--accent);
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Animated background for hero section */
+        .hero-bg {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating animation for profile image */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        /* 3D Model Viewer */
+        #model-viewer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            z-index: 1000;
+            display: none;
+        }
+
+        #model-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .model-nav {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            z-index: 1001;
+        }
+
+        .model-nav button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .model-nav button:hover {
+            opacity: 0.9;
+        }
+
+        .close-model {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .model-title {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            z-index: 1001;
+            background-color: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+
+        /* Mobile menu animation */
+        #mobile-menu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        #mobile-menu.open {
+            max-height: 300px;
+        }
+
+        /* Loading spinner */
+        .loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--accent);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            z-index: 1001;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Engine logos */
+        .engine-logo {
+            height: 24px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body class="bg-primary text-primary">
+    <!-- Navigation -->
+    <nav class="bg-secondary py-4 px-6 sticky top-0 z-50 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold accent">Paundra<span class="text-white">Dev</span></a>
+            
+            <div class="hidden md:flex space-x-8">
+                <a href="#home" class="hover:text-accent transition">Home</a>
+                <a href="#skills" class="hover:text-accent transition">Skills</a>
+                <a href="#projects" class="hover:text-accent transition">Projects</a>
+                <a href="#experience" class="hover:text-accent transition">Experience</a>
+                <a href="#contact" class="hover:text-accent transition">Contact</a>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <button id="theme-toggle" class="p-2 rounded-full bg-primary">
+                    <i class="fas fa-moon text-accent"></i>
+                </button>
+                
+                <button id="mobile-menu-button" class="md:hidden p-2">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="md:hidden bg-secondary">
+            <div class="px-4 py-2">
+                <a href="#home" class="block py-2 hover:text-accent transition">Home</a>
+                <a href="#skills" class="block py-2 hover:text-accent transition">Skills</a>
+                <a href="#projects" class="block py-2 hover:text-accent transition">Projects</a>
+                <a href="#experience" class="block py-2 hover:text-accent transition">Experience</a>
+                <a href="#contact" class="block py-2 hover:text-accent transition">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero-bg text-white py-20 md:py-32">
+        <div class="container mx-auto px-6 flex flex-col md:flex-row items-center">
+            <div class="md:w-1/2 mb-10 md:mb-0">
+                <h1 class="text-4xl md:text-6xl font-bold mb-4">Hi, I'm <span class="text-yellow-300">Paundra Wirahardja Ananto</span></h1>
+                <h2 class="text-2xl md:text-3xl font-semibold mb-6">Game Developer | Unreal Engine & Unity Specialist</h2>
+                <p class="text-lg mb-8 max-w-lg">
+                    Creating immersive gaming experiences with cutting-edge technology. 
+                    Specializing in Unreal Engine 5, Unity 3D, and interactive web games.
+                </p>
+                <div class="flex space-x-4">
+                    <a href="#contact" class="bg-white text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition">
+                        Hire Me
+                    </a>
+                    <a href="#projects" class="border-2 border-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-gray-800 transition">
+                        View Work
+                    </a>
+                </div>
+            </div>
+            
+            <div class="md:w-1/2 flex justify-center">
+                <img src="image.png" 
+                     alt="Paundra Wirahardja Ananto" 
+                     class="rounded-full w-64 h-64 md:w-80 md:h-80 object-cover border-4 border-white floating shadow-xl">
+            </div>
+        </div>
+    </section>
+
+    <!-- 3D Model Viewer -->
+    <div id="model-viewer">
+        <div class="model-title" id="model-title">Loading Model...</div>
+        <button class="close-model" onclick="closeModelViewer()">&times;</button>
+        <div id="model-container"></div>
+        <div class="model-nav">
+            <button onclick="prevModel()"><i class="fas fa-arrow-left"></i> Previous</button>
+            <button onclick="nextModel()">Next <i class="fas fa-arrow-right"></i></button>
+            <button onclick="resetCamera()"><i class="fas fa-sync-alt"></i> Reset View</button>
+        </div>
+        <div class="loader" id="model-loader"></div>
+    </div>
+
+    <!-- Projects Section -->
+    <section id="projects" class="py-20 bg-primary">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center mb-4">Featured <span class="accent">Projects</span></h2>
+            <p class="text-center text-secondary max-w-2xl mx-auto mb-12">
+                Here are some of my most impressive game development projects across different platforms and engines.
+            </p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Unreal Engine Project -->
+                <div class="game-card card rounded-lg overflow-hidden transition-transform hover:scale-105">
+                    <div class="relative overflow-hidden h-48">
+                        <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" 
+                             alt="Unreal Engine Project" 
+                             class="w-full h-full object-cover transition-transform duration-500 hover:scale-110">
+                        <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition">
+                            <button onclick="openModelViewer('unreal')" class="bg-accent text-white px-6 py-2 rounded-lg font-semibold">View 3D Models</button>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/2/20/UE_Logo_Black_Centered.svg" alt="Unreal Engine" class="engine-logo">
+                            Apocalyptic Hospital
+                        </h3>
+                        <p class="text-secondary mb-4">A horror survival game set in an abandoned hospital with photorealistic environments.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="bg-secondary px-3 py-1 rounded-full text-sm">Unreal Engine 5</span>
+                            <span class="bg-secondary px-3 py-1 rounded-full text-sm">Nanite</span>
+                            <span class="bg-secondary px-3 py-1 rounded-full text-sm">Lumen</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Unity Project -->
+                <div class="game-card card rounded-lg overflow-hidden transition-transform hover:scale-105">
+                    <div class="relative overflow-hidden h-48">
+                        <img src="https://images.unsplash.com/photo-1551103782-8ab07afd45c1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" 
+                             alt="Unity Project" 
+                             class="w-full h-full object-cover transition-transform duration-500 hover:scale-110">
+                        <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition">
+                            <button onclick="openModelViewer('unity')" class="bg-accent text-white px-6 py-2 rounded-lg font-semibold">View 3D Models</button>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/1/19/Unity_Technologies_logo.svg" alt="Unity" class="engine-logo">
+                            Character Showcase
+                        </h3>
+                        <p class="text-secondary mb-4">An interactive character viewer with multiple anime-style 3D models.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="bg-secondary px-3 py-1 rounded-full text-sm">Unity 3D</span>
+                            <span class="bg-secondary px-3 py-1 rounded-full text-sm">C#</span>
+                            <span class="bg-secondary px-3 py-1 rounded-full text-sm">Shader Graph</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills" class="py-20 bg-secondary">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center mb-4">My <span class="accent">Skills</span></h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+                <!-- Unreal Engine Skills -->
+                <div class="card p-6 rounded-lg">
+                    <div class="flex items-center mb-4">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/2/20/UE_Logo_Black_Centered.svg" alt="Unreal Engine" class="engine-logo h-8">
+                        <h3 class="text-xl font-bold">Unreal Engine 5</h3>
+                    </div>
+                    <ul class="space-y-2 text-secondary">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-accent mr-2"></i>
+                            Blueprint Visual Scripting
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-accent mr-2"></i>
+                            C++ Gameplay Programming
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-accent mr-2"></i>
+                            Nanite & Lumen Rendering
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-accent mr-2"></i>
+                            Multiplayer Replication
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Unity Skills -->
+                <div class="card p-6 rounded-lg">
+                    <div class="flex items-center mb-4">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/1/19/Unity_Technologies_logo.svg" alt="Unity" class="engine-logo h-8">
+                        <h3 class="text-xl font-bold">Unity 3D</h3>
+                    </div>
+                    <ul class="space-y-2 text-secondary">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-accent mr-2"></i>
+                            C# Gameplay Programming
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-accent mr-2"></i>
+                            Shader Graph & VFX Graph
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-accent mr-2"></i>
+                            AR/VR Development
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-accent mr-2"></i>
+                            DOTS & Job System
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Other Skills -->
+                <div class="card p-6 rounded-lg">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-code text-2xl mr-3 accent"></i>
+                        <h3 class="text-xl font-bold">Other Skills</h3>
+                    </div>
+                    <ul class="space-y-2 text-secondary">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-accent mr-2"></i>
+                            3D Modeling (Blender/Maya)
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-accent mr-2"></i>
+                            WebGL & Three.js
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-accent mr-2"></i>
+                            Git Version Control
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-accent mr-2"></i>
+                            Agile Development
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-20 bg-primary">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center mb-4">Get In <span class="accent">Touch</span></h2>
+            <p class="text-center text-secondary max-w-2xl mx-auto mb-12">
+                Have a project in mind? Let's collaborate!
+            </p>
+            
+            <form id="contact-form" class="max-w-2xl mx-auto">
+                <div class="mb-4">
+                    <label for="name" class="block mb-2 font-semibold">Name</label>
+                    <input type="text" id="name" name="name" class="w-full px-4 py-3 rounded-lg bg-secondary border-none focus:ring-2 focus:ring-accent" required>
+                </div>
+                <div class="mb-4">
+                    <label for="email" class="block mb-2 font-semibold">Email</label>
+                    <input type="email" id="email" name="email" class="w-full px-4 py-3 rounded-lg bg-secondary border-none focus:ring-2 focus:ring-accent" required>
+                </div>
+                <div class="mb-4">
+                    <label for="message" class="block mb-2 font-semibold">Message</label>
+                    <textarea id="message" name="message" rows="5" class="w-full px-4 py-3 rounded-lg bg-secondary border-none focus:ring-2 focus:ring-accent" required></textarea>
+                </div>
+                <button type="submit" class="bg-accent text-white px-8 py-3 rounded-lg font-semibold hover:opacity-90 transition">
+                    Send Message
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-secondary py-8">
+        <div class="container mx-auto px-6 text-center">
+            <div class="flex justify-center space-x-6 mb-4">
+                <a href="#" class="text-accent hover:opacity-80">
+                    <i class="fab fa-github fa-2x"></i>
+                </a>
+                <a href="#" class="text-accent hover:opacity-80">
+                    <i class="fab fa-linkedin fa-2x"></i>
+                </a>
+                <a href="#" class="text-accent hover:opacity-80">
+                    <i class="fab fa-twitter fa-2x"></i>
+                </a>
+            </div>
+            <p class="text-secondary">© 2023 Paundra Wirahardja Ananto. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // ===== Dark/Light Mode Toggle =====
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        html.classList.add(savedTheme);
+        updateThemeIcon(savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+            updateThemeIcon(html.classList.contains('dark') ? 'dark' : 'light');
+        });
+
+        function updateThemeIcon(theme) {
+            const icon = themeToggle.querySelector('i');
+            icon.classList.toggle('fa-moon', theme === 'light');
+            icon.classList.toggle('fa-sun', theme === 'dark');
+        }
+
+        // ===== Mobile Menu Toggle =====
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('open');
+            mobileMenuButton.innerHTML = mobileMenu.classList.contains('open') ? 
+                '<i class="fas fa-times text-xl"></i>' : 
+                '<i class="fas fa-bars text-xl"></i>';
+        });
+
+        // Close mobile menu when clicking a link
+        document.querySelectorAll('#mobile-menu a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.remove('open');
+                mobileMenuButton.innerHTML = '<i class="fas fa-bars text-xl"></i>';
+            });
+        });
+
+        // ===== Smooth Scrolling =====
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    window.scrollTo({
+                        top: target.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // ===== 3D Model Viewer =====
+        let scene, camera, renderer, controls, model;
+        let currentModelIndex = 0;
+        let currentProject = '';
+        const models = {
+            unreal: [
+                { name: "Apocalyptic Hospital Hallway", file: "apocalyptic_hospital_hallway_interior.glb" },
+                { name: "Ruined Hospital Room", file: "hospital_room.glb" }
+            ],
+            unity: [
+                { name: "Hu Tao Character Model", file: "hu_tao_3d_model.glb" },
+                { name: "Anime Warrior", file: "anime_warrior.glb" }
+            ]
+        };
+
+        function initThreeJS() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x111111);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 5;
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('model-container').appendChild(renderer.domElement);
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.25;
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+            
+            // Animation loop
+            animate();
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        function loadModel(modelPath) {
+            document.getElementById('model-loader').style.display = 'block';
+            
+            if (model) scene.remove(model);
+            
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                modelPath,
+                (gltf) => {
+                    model = gltf.scene;
+                    scene.add(model);
+                    
+                    // Center model
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    model.position.x -= center.x;
+                    model.position.y -= center.y;
+                    model.position.z -= center.z;
+                    
+                    // Adjust camera
+                    const size = box.getSize(new THREE.Vector3()).length();
+                    camera.position.z = size * 1.5;
+                    controls.target.copy(center);
+                    controls.update();
+                    
+                    document.getElementById('model-loader').style.display = 'none';
+                },
+                undefined,
+                (error) => {
+                    console.error('Error loading model:', error);
+                    document.getElementById('model-loader').style.display = 'none';
+                    document.getElementById('model-title').textContent = 'Error loading model';
+                }
+            );
+        }
+        
+        function openModelViewer(project) {
+            currentProject = project;
+            currentModelIndex = 0;
+            document.getElementById('model-viewer').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            updateModelViewer();
+        }
+        
+        function closeModelViewer() {
+            document.getElementById('model-viewer').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        function nextModel() {
+            if (currentModelIndex < models[currentProject].length - 1) {
+                currentModelIndex++;
+                updateModelViewer();
+            }
+        }
+        
+        function prevModel() {
+            if (currentModelIndex > 0) {
+                currentModelIndex--;
+                updateModelViewer();
+            }
+        }
+        
+        function resetCamera() {
+            if (model) {
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3()).length();
+                
+                camera.position.z = size * 1.5;
+                controls.target.copy(center);
+                controls.update();
+            }
+        }
+        
+        function updateModelViewer() {
+            const current = models[currentProject][currentModelIndex];
+            document.getElementById('model-title').textContent = current.name;
+            loadModel(current.file);
+        }
+
+        // Initialize Three.js when the page loads
+        window.addEventListener('load', () => {
+            initThreeJS();
+        });
+
+        // ===== Contact Form Submission =====
+        document.getElementById('contact-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            // In a real implementation, you would send this to your backend
+            console.log('Form submitted:', data);
+            
+            alert('Message sent successfully! I will contact you soon.');
+            this.reset();
+        });
+    </script>
+</body>
+</html>
